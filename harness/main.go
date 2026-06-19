@@ -19,6 +19,7 @@ var serverSteps = []func(config *testrunners.ServerTestConfig) error{
 	steps.TestMultiplePingsStep,
 	steps.TestConcurrentPingsStep,
 	steps.TestEchoStep,
+	steps.TestSetAndGetStep,
 }
 
 func main() {

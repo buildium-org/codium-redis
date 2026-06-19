@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	datastore "golang/dataStore"
 	resp "golang/resp"
 	"io"
 	"log"
@@ -9,6 +10,7 @@ import (
 )
 
 func main() {
+	dataStore := datastore.NewDataStore()
 	listener, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		log.Fatalf("failed to listen on :6379: %v", err)
@@ -23,11 +25,11 @@ func main() {
 			log.Printf("accept error: %v", err)
 			continue
 		}
-		go handleConn(conn)
+		go handleConn(conn, dataStore)
 	}
 }
 
-func handleConn(conn net.Conn) {
+func handleConn(conn net.Conn, dataStore *datastore.DataStore) {
 	defer conn.Close()
 	log.Printf("connection from %s", conn.RemoteAddr())
 
@@ -53,6 +55,24 @@ func handleConn(conn net.Conn) {
 			}
 		case resp.EchoMessage:
 			_, err := conn.Write(resp.NewBulkStringMessage(msg.Message).ToBytes())
+			if err != nil {
+				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+				return
+			}
+		case resp.SetMessage:
+			dataStore.Set(msg.Key, msg.Value)
+			_, err := conn.Write(resp.NewOkMessage().ToBytes())
+			if err != nil {
+				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+				return
+			}
+		case resp.GetMessage:
+			value, err := dataStore.Get(msg.Key)
+			if err != nil {
+				log.Printf("get error from %s: %v", conn.RemoteAddr(), err)
+				return
+			}
+			_, err = conn.Write(resp.NewBulkStringMessage(value).ToBytes())
 			if err != nil {
 				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
 				return

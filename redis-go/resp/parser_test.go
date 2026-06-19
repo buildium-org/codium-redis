@@ -45,4 +45,31 @@ func TestParseArray(t *testing.T) {
 	if _, ok := msg.(PingMessage); !ok {
 		t.Fatalf("expected PingMessage, got %v", msg)
 	}
+
+	message = "*3\r\n$3\r\nSET\r\n$4\r\nkey1\r\n$6\r\nvalue1\r\n"
+	msg, err = parser.Parse(message)
+	if err != nil {
+		t.Fatalf("failed to parse message: %v", err)
+	}
+	if _, ok := msg.(SetMessage); !ok {
+		t.Fatalf("expected SetMessage, got %v", msg)
+	}
+	if msg.(SetMessage).Key != "key1" {
+		t.Fatalf("expected Key to be key1, got %v", msg.(SetMessage).Key)
+	}
+	if msg.(SetMessage).Value != "value1" {
+		t.Fatalf("expected Value to be value1, got %v", msg.(SetMessage).Value)
+	}
+
+	message = "*2\r\n$3\r\nGET\r\n$4\r\nkey1\r\n"
+	msg, err = parser.Parse(message)
+	if err != nil {
+		t.Fatalf("failed to parse message: %v", err)
+	}
+	if _, ok := msg.(GetMessage); !ok {
+		t.Fatalf("expected GetMessage, got %v", msg)
+	}
+	if msg.(GetMessage).Key != "key1" {
+		t.Fatalf("expected Key to be key1, got %v", msg.(GetMessage).Key)
+	}
 }

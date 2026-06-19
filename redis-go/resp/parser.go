@@ -13,13 +13,30 @@ import (
 type RespMessage interface{}
 
 type PingMessage struct{}
-type OkMessage struct{}
+
 type ArrayMessage struct {
 	Elements []string
 }
 type EchoMessage struct {
 	Message string
 }
+type SetMessage struct {
+	Key   string
+	Value string
+}
+type GetMessage struct {
+	Key string
+}
+
+type OkMessage struct{}
+
+func NewOkMessage() *OkMessage {
+	return &OkMessage{}
+}
+func (m *OkMessage) ToBytes() []byte {
+	return []byte("+OK\r\n")
+}
+
 type BulkStringMessage struct {
 	Value string
 }
@@ -57,6 +74,10 @@ func (p *RESPParser) parseTokens(messageParts []string) (RespMessage, error) {
 		return EchoMessage{Message: messageParts[1]}, nil
 	case "PING":
 		return PingMessage{}, nil
+	case "SET":
+		return SetMessage{Key: messageParts[1], Value: messageParts[2]}, nil
+	case "GET":
+		return GetMessage{Key: messageParts[1]}, nil
 	default:
 		return nil, fmt.Errorf("unknown token: %s", messageParts[0])
 	}
@@ -93,7 +114,7 @@ func (p *RESPParser) parseArray(messageParts []string) (*ArrayMessage, error) {
 		valuePart := messageParts[i+1]
 		value, err := p.parseBulkString(lengthPart, valuePart)
 		if err != nil {
-			return nil, fmt.Errorf("invalid array: %s", messageParts[i])
+			return nil, fmt.Errorf("invalid array: %s", err)
 		}
 		elements = append(elements, value)
 	}

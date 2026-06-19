@@ -179,3 +179,42 @@ func TestEchoStep(config *testrunners.ServerTestConfig) error {
 	config.Logger.LogSuccess("Redis server is responding to ECHO")
 	return nil
 }
+
+func TestSetAndGetStep(config *testrunners.ServerTestConfig) error {
+	config.Logger.LogTitle("Test Set and Get")
+	config.Logger.LogInfo("Testing if the Redis server is responding to SET and GET")
+	time.Sleep(1000 * time.Millisecond)
+	defer config.Server.Stop()
+
+	conn, err := net.Dial("tcp", "localhost:6379")
+	if err != nil {
+		config.Logger.LogError("Failed to connect to Redis port 6379")
+		return err
+	}
+	defer conn.Close()
+	config.Logger.LogInfo("Setting key1 to value1")
+	conn.Write([]byte("*3\r\n$3\r\nSET\r\n$4\r\nkey1\r\n$6\r\nvalue1\r\n"))
+	response, err := readResponse(bufio.NewReader(conn))
+	if err != nil {
+		config.Logger.LogError("Failed to read response from Redis server")
+		return err
+	}
+	config.Logger.LogInfo(fmt.Sprintf("Response from Redis server: %s", response))
+	if response != "+OK\r\n" {
+		config.Logger.LogError("Redis server did not respond with OK")
+		return fmt.Errorf("redis server did not respond with OK")
+	}
+	conn.Write([]byte("*2\r\n$3\r\nGET\r\n$4\r\nkey1\r\n"))
+	response, err = readResponse(bufio.NewReader(conn))
+	if err != nil {
+		config.Logger.LogError("Failed to read response from Redis server")
+		return err
+	}
+	config.Logger.LogInfo(fmt.Sprintf("Response from Redis server: %s", response))
+	if response != "$6\r\nvalue1\r\n" {
+		config.Logger.LogError("Redis server did not respond with value1")
+		return fmt.Errorf("redis server did not respond with value1")
+	}
+	config.Logger.LogSuccess("Redis server is responding to SET and GET")
+	return nil
+}
