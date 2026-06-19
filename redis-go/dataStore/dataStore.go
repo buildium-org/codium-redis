@@ -3,29 +3,45 @@ package datastore
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
+type DataStoreEntry struct {
+	Value        string
+	ExpireTimeMS int64
+}
 type DataStore struct {
-	Data  map[string]string
+	Data  map[string]DataStoreEntry
 	Mutex sync.Mutex
 }
 
 func NewDataStore() *DataStore {
-	return &DataStore{Data: make(map[string]string), Mutex: sync.Mutex{}}
+	return &DataStore{Data: make(map[string]DataStoreEntry), Mutex: sync.Mutex{}}
 }
 
-func (d *DataStore) Set(key string, value string) {
+func (d *DataStore) Set(key string, value string, expireTimeMS int64) {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
-	d.Data[key] = value
+
+	if expireTimeMS > 0 {
+		expireTimeMS = time.Now().UnixMilli() + expireTimeMS
+	} else {
+		expireTimeMS = -1
+	}
+	d.Data[key] = DataStoreEntry{Value: value, ExpireTimeMS: expireTimeMS}
 }
 
-func (d *DataStore) Get(key string) (string, error) {
+func (d *DataStore) Get(key string) (*DataStoreEntry, error) {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 	value, ok := d.Data[key]
 	if !ok {
-		return "", fmt.Errorf("key not found")
+		return nil, fmt.Errorf("key not found")
 	}
-	return value, nil
+
+	if value.ExpireTimeMS > 0 && time.Now().UnixMilli() > value.ExpireTimeMS {
+		delete(d.Data, key)
+		return nil, nil
+	}
+	return &value, nil
 }

@@ -61,7 +61,7 @@ func handleConn(conn net.Conn, dataStore *datastore.DataStore) {
 				return
 			}
 		case *commands.SetMessage:
-			dataStore.Set(msg.Key, msg.Value)
+			dataStore.Set(msg.Key, msg.Value, msg.ExpireTimeMS)
 			_, err := conn.Write(commands.NewOkMessage().ToBytes())
 			if err != nil {
 				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
@@ -73,10 +73,19 @@ func handleConn(conn net.Conn, dataStore *datastore.DataStore) {
 				log.Printf("get error from %s: %v", conn.RemoteAddr(), err)
 				return
 			}
-			_, err = conn.Write(commands.NewBulkStringMessage(value).ToBytes())
-			if err != nil {
-				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-				return
+
+			if value == nil {
+				_, err = conn.Write(commands.NewNullBulkStringMessage().ToBytes())
+				if err != nil {
+					log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+					return
+				}
+			} else {
+				_, err = conn.Write(commands.NewBulkStringMessage(value.Value).ToBytes())
+				if err != nil {
+					log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+					return
+				}
 			}
 		default:
 			log.Printf("unknown message type: %v", msg)

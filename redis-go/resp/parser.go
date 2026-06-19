@@ -49,7 +49,8 @@ func (p *RESPParser) parseSimpleString(messageParts []string) ([]string, error) 
 }
 
 func (p *RESPParser) parseArray(messageParts []string) ([]string, error) {
-	// *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n -> ECHO hey
+	// "*2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n" -> ECHO hey
+	// "*5\r\n$3\r\nSET\r\n$4\r\nkey1\r\n$6\r\nvalue1\r\n$2\r\nPX\r\n:1000\r\n" -> SET key1 value1 PX 1000
 	if messageParts[0][0] != '*' {
 		return nil, fmt.Errorf("invalid array: %s", messageParts[0])
 	}
@@ -60,14 +61,36 @@ func (p *RESPParser) parseArray(messageParts []string) ([]string, error) {
 	}
 
 	elements := []string{}
-	for i := 1; i < numElements*2; i += 2 {
-		lengthPart := messageParts[i]
-		valuePart := messageParts[i+1]
-		value, err := p.parseBulkString(lengthPart, valuePart)
-		if err != nil {
-			return nil, fmt.Errorf("invalid array: %s", err)
+	for i := 1; i < len(messageParts); i++ {
+		if messageParts[i] == "" {
+			continue
 		}
-		elements = append(elements, value)
+		op := messageParts[i][0]
+		switch op {
+		case '$':
+			length, err := strconv.Atoi(messageParts[i][1:])
+			if err != nil {
+				return nil, fmt.Errorf("invalid bulk string: %s", messageParts[i])
+			}
+			value := messageParts[i+1]
+			if len(value) != length {
+				return nil, fmt.Errorf("invalid bulk string: %s", value)
+			}
+			elements = append(elements, value)
+			i++
+		case ':':
+			value, err := strconv.ParseInt(messageParts[i][1:], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid integer: %s", messageParts[i])
+			}
+			elements = append(elements, strconv.FormatInt(value, 10))
+		default:
+			return nil, fmt.Errorf("invalid operation: %s", messageParts[i])
+		}
+	}
+
+	if len(elements) != numElements {
+		return nil, fmt.Errorf("invalid array: %s", messageParts[0])
 	}
 
 	return elements, nil

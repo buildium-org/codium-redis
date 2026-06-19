@@ -66,4 +66,16 @@ func TestParseArray(t *testing.T) {
 	if msg.(*commands.GetMessage).Key != "key1" {
 		t.Fatalf("expected Key to be key1, got %v", msg.(*commands.GetMessage).Key)
 	}
+
+	message = "*5\r\n$3\r\nSET\r\n$4\r\nkey1\r\n$6\r\nvalue1\r\n$2\r\nPX\r\n:1000\r\n"
+	msg, err = parser.Parse(message)
+	if err != nil {
+		t.Fatalf("failed to parse message: %v", err)
+	}
+	if _, ok := msg.(*commands.SetMessage); !ok {
+		t.Fatalf("expected SetMessage, got %v", msg)
+	}
+	if msg.(*commands.SetMessage).ExpireTimeMS != 1000 {
+		t.Fatalf("expected ExpireTimeMS to be 1000, got %v", msg.(*commands.SetMessage).ExpireTimeMS)
+	}
 }
