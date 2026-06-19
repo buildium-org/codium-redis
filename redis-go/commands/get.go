@@ -6,8 +6,8 @@ type GetMessage struct {
 	Key string
 }
 
-func NewGetMessage(key string) *GetMessage {
-	return &GetMessage{Key: key}
+func NewGetMessage(tokens []string) *GetMessage {
+	return &GetMessage{Key: tokens[0]}
 }
 func (m *GetMessage) ToBytes() []byte {
 	return []byte("$" + strconv.Itoa(len(m.Key)) + "\r\n" + m.Key + "\r\n")

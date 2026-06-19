@@ -7,7 +7,9 @@ type SetMessage struct {
 	Value string
 }
 
-func NewSetMessage(key string, value string) *SetMessage {
+func NewSetMessage(tokens []string) *SetMessage {
+	key := tokens[0]
+	value := tokens[1]
 	return &SetMessage{Key: key, Value: value}
 }
 func (m *SetMessage) ToBytes() []byte {

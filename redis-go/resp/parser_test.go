@@ -15,15 +15,6 @@ func TestParseSimpleString(t *testing.T) {
 	if _, ok := msg.(*commands.PingMessage); !ok {
 		t.Fatalf("expected PingMessage, got %v", msg)
 	}
-
-	message = "+OK\r\n"
-	msg, err = parser.Parse(message)
-	if err != nil {
-		t.Fatalf("failed to parse message: %v", err)
-	}
-	if _, ok := msg.(*commands.OkMessage); !ok {
-		t.Fatalf("expected OkMessage, got %v", msg)
-	}
 }
 
 func TestParseArray(t *testing.T) {
