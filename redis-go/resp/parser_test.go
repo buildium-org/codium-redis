@@ -1,6 +1,9 @@
 package resp
 
-import "testing"
+import (
+	"golang/commands"
+	"testing"
+)
 
 func TestParseSimpleString(t *testing.T) {
 	parser := &RESPParser{}
@@ -9,7 +12,7 @@ func TestParseSimpleString(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(PingMessage); !ok {
+	if _, ok := msg.(*commands.PingMessage); !ok {
 		t.Fatalf("expected PingMessage, got %v", msg)
 	}
 
@@ -18,7 +21,7 @@ func TestParseSimpleString(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(OkMessage); !ok {
+	if _, ok := msg.(*commands.OkMessage); !ok {
 		t.Fatalf("expected OkMessage, got %v", msg)
 	}
 }
@@ -30,11 +33,11 @@ func TestParseArray(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(EchoMessage); !ok {
+	if _, ok := msg.(*commands.EchoMessage); !ok {
 		t.Fatalf("expected EchoMessage, got %v", msg)
 	}
-	if msg.(EchoMessage).Message != "hey" {
-		t.Fatalf("expected Message to be hey, got %v", msg.(EchoMessage).Message)
+	if msg.(*commands.EchoMessage).Message != "hey" {
+		t.Fatalf("expected Message to be hey, got %v", msg.(*commands.EchoMessage).Message)
 	}
 
 	message = "*1\r\n$4\r\nPING\r\n"
@@ -42,7 +45,7 @@ func TestParseArray(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(PingMessage); !ok {
+	if _, ok := msg.(*commands.PingMessage); !ok {
 		t.Fatalf("expected PingMessage, got %v", msg)
 	}
 
@@ -51,14 +54,14 @@ func TestParseArray(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(SetMessage); !ok {
+	if _, ok := msg.(*commands.SetMessage); !ok {
 		t.Fatalf("expected SetMessage, got %v", msg)
 	}
-	if msg.(SetMessage).Key != "key1" {
-		t.Fatalf("expected Key to be key1, got %v", msg.(SetMessage).Key)
+	if msg.(*commands.SetMessage).Key != "key1" {
+		t.Fatalf("expected Key to be key1, got %v", msg.(*commands.SetMessage).Key)
 	}
-	if msg.(SetMessage).Value != "value1" {
-		t.Fatalf("expected Value to be value1, got %v", msg.(SetMessage).Value)
+	if msg.(*commands.SetMessage).Value != "value1" {
+		t.Fatalf("expected Value to be value1, got %v", msg.(*commands.SetMessage).Value)
 	}
 
 	message = "*2\r\n$3\r\nGET\r\n$4\r\nkey1\r\n"
@@ -66,10 +69,10 @@ func TestParseArray(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse message: %v", err)
 	}
-	if _, ok := msg.(GetMessage); !ok {
+	if _, ok := msg.(*commands.GetMessage); !ok {
 		t.Fatalf("expected GetMessage, got %v", msg)
 	}
-	if msg.(GetMessage).Key != "key1" {
-		t.Fatalf("expected Key to be key1, got %v", msg.(GetMessage).Key)
+	if msg.(*commands.GetMessage).Key != "key1" {
+		t.Fatalf("expected Key to be key1, got %v", msg.(*commands.GetMessage).Key)
 	}
 }
