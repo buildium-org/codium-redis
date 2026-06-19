@@ -1,5 +1,5 @@
 {
     "projectId": "redis123",
-    "stage": 1,
+    "stage": 2,
     "entrypoint": "app"
 }

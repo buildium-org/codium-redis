@@ -28,4 +28,5 @@ func main() {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("connection from %s", conn.RemoteAddr())
+	conn.Write([]byte("+PONG\r\n"))
 }

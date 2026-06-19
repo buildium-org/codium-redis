@@ -15,6 +15,7 @@ import (
 
 var serverSteps = []func(config *testrunners.ServerTestConfig) error{
 	steps.TestRedisPort6379Step,
+	steps.TestRedisPingStep,
 }
 
 func main() {
