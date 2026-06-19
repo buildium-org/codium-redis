@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"strings"
 )
 
 func main() {
@@ -28,5 +31,22 @@ func main() {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("connection from %s", conn.RemoteAddr())
-	conn.Write([]byte("+PONG\r\n"))
+
+	reader := bufio.NewReader(conn)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("read error from %s: %v", conn.RemoteAddr(), err)
+			}
+			return
+		}
+
+		if strings.TrimSpace(line) == "PING" {
+			if _, err := conn.Write([]byte("+PONG\r\n")); err != nil {
+				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+				return
+			}
+		}
+	}
 }
