@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	resp "golang/resp"
 	"io"
 	"log"
 	"net"
-	"strings"
 )
 
 func main() {
@@ -32,9 +31,10 @@ func handleConn(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("connection from %s", conn.RemoteAddr())
 
-	reader := bufio.NewReader(conn)
+	parser := &resp.RESPParser{}
+	buf := make([]byte, 4096)
 	for {
-		line, err := reader.ReadString('\n')
+		n, err := conn.Read(buf)
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("read error from %s: %v", conn.RemoteAddr(), err)
@@ -42,11 +42,23 @@ func handleConn(conn net.Conn) {
 			return
 		}
 
-		if strings.TrimSpace(line) == "PING" {
-			if _, err := conn.Write([]byte("+PONG\r\n")); err != nil {
+		msg, err := parser.Parse(string(buf[:n]))
+
+		switch msg := msg.(type) {
+		case resp.PingMessage:
+			_, err := conn.Write([]byte("+PONG\r\n"))
+			if err != nil {
 				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
 				return
 			}
+		case resp.EchoMessage:
+			_, err := conn.Write(resp.NewBulkStringMessage(msg.Message).ToBytes())
+			if err != nil {
+				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
+				return
+			}
+		default:
+			log.Printf("unknown message type: %v", msg)
 		}
 	}
 }

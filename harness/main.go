@@ -18,6 +18,7 @@ var serverSteps = []func(config *testrunners.ServerTestConfig) error{
 	steps.TestRedisPingStep,
 	steps.TestMultiplePingsStep,
 	steps.TestConcurrentPingsStep,
+	steps.TestEchoStep,
 }
 
 func main() {

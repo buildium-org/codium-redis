@@ -3,12 +3,39 @@ package steps
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	testrunners "github.com/buildium-org/codium-harness/testrunners"
 )
+
+func readResponse(r *bufio.Reader) (string, error) {
+	line, err := r.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	if len(line) == 0 || line[0] != '$' {
+		return line, nil
+	}
+
+	length, err := strconv.Atoi(strings.TrimSpace(line[1:]))
+	if err != nil {
+		return "", err
+	}
+	if length < 0 {
+		return line, nil
+	}
+
+	data := make([]byte, length+2)
+	if _, err := io.ReadFull(r, data); err != nil {
+		return "", err
+	}
+	return line + string(data), nil
+}
 
 func TestRedisPort6379Step(config *testrunners.ServerTestConfig) error {
 	config.Logger.LogTitle("Test Redis Port 6379")
@@ -38,8 +65,8 @@ func TestRedisPingStep(config *testrunners.ServerTestConfig) error {
 		return err
 	}
 	defer conn.Close()
-	conn.Write([]byte("PING\r\n"))
-	response, err := bufio.NewReader(conn).ReadString('\n')
+	conn.Write([]byte("+PING\r\n"))
+	response, err := readResponse(bufio.NewReader(conn))
 	if err != nil {
 		config.Logger.LogError("Failed to read response from Redis server")
 		return err
@@ -67,8 +94,8 @@ func TestMultiplePingsStep(config *testrunners.ServerTestConfig) error {
 	defer conn.Close()
 	responses := []string{}
 	for range 2 {
-		conn.Write([]byte("PING\n"))
-		response, err := bufio.NewReader(conn).ReadString('\n')
+		conn.Write([]byte("+PING\r\n"))
+		response, err := readResponse(bufio.NewReader(conn))
 		if err != nil {
 			config.Logger.LogError("Failed to read response from Redis server")
 			return err
@@ -103,8 +130,8 @@ func TestConcurrentPingsStep(config *testrunners.ServerTestConfig) error {
 				return
 			}
 			defer conn.Close()
-			conn.Write([]byte("PING\n"))
-			response, err := bufio.NewReader(conn).ReadString('\n')
+			conn.Write([]byte("+PING\r\n"))
+			response, err := readResponse(bufio.NewReader(conn))
 			if err != nil {
 				config.Logger.LogError("Failed to read response from Redis server")
 				return
@@ -123,5 +150,32 @@ func TestConcurrentPingsStep(config *testrunners.ServerTestConfig) error {
 		return fmt.Errorf("redis server did not respond with PONG")
 	}
 	config.Logger.LogSuccess("Redis server is responding to concurrent PINGs")
+	return nil
+}
+
+func TestEchoStep(config *testrunners.ServerTestConfig) error {
+	config.Logger.LogTitle("Test Echo")
+	config.Logger.LogInfo("Testing if the Redis server is responding to ECHO")
+	time.Sleep(1000 * time.Millisecond)
+	defer config.Server.Stop()
+
+	conn, err := net.Dial("tcp", "localhost:6379")
+	if err != nil {
+		config.Logger.LogError("Failed to connect to Redis port 6379")
+		return err
+	}
+	defer conn.Close()
+	conn.Write([]byte("*2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n"))
+	response, err := readResponse(bufio.NewReader(conn))
+	if err != nil {
+		config.Logger.LogError("Failed to read response from Redis server")
+		return err
+	}
+	config.Logger.LogInfo(fmt.Sprintf("Response from Redis server: %s", response))
+	if response != "$3\r\nhey\r\n" {
+		config.Logger.LogError("Redis server did not respond with ECHO")
+		return fmt.Errorf("redis server did not respond with ECHO")
+	}
+	config.Logger.LogSuccess("Redis server is responding to ECHO")
 	return nil
 }
