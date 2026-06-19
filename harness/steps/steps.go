@@ -10,7 +10,6 @@ import (
 func TestRedisPort6379Step(config *testrunners.ServerTestConfig) error {
 	config.Logger.LogTitle("Test Redis Port 6379")
 	config.Logger.LogInfo("Testing if the Redis port 6379 is open")
-	config.Server.Start()
 	time.Sleep(1000 * time.Millisecond)
 	defer config.Server.Stop()
 
