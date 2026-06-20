@@ -1,9 +1,33 @@
 {
     "stages": [
         {
-            "title": "Stage 1",
-            "mdx": "stage_1.mdx"
+            "title": "Bind to a TCP Port",
+            "md": "stage_1.md"
+        },
+        {
+            "title": "Respond to PING",
+            "md": "stage_2.md"
+        },
+        {
+            "title": "Handle Multiple PINGs",
+            "md": "stage_3.md"
+        },
+        {
+            "title": "Handle Concurrent Clients",
+            "md": "stage_4.md"
+        },
+        {
+            "title": "Implement ECHO",
+            "md": "stage_5.md"
+        },
+        {
+            "title": "Implement SET and GET",
+            "md": "stage_6.md"
+        },
+        {
+            "title": "Key Expiry with PX",
+            "md": "stage_7.md"
         }
     ],
-    "homepage": "homepage.mdx"
+    "homepage": "homepage.md"
 }
