@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"golang/commands"
 	datastore "golang/dataStore"
 	"golang/resp"
 	"io"
@@ -46,49 +45,14 @@ func handleConn(conn net.Conn, dataStore *datastore.DataStore) {
 		}
 
 		msg, err := parser.Parse(string(buf[:n]))
-
-		switch msg := msg.(type) {
-		case *commands.PingMessage:
-			_, err := conn.Write([]byte("+PONG\r\n"))
-			if err != nil {
-				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-				return
-			}
-		case *commands.EchoMessage:
-			_, err := conn.Write(commands.NewBulkStringMessage(msg.Message).ToBytes())
-			if err != nil {
-				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-				return
-			}
-		case *commands.SetMessage:
-			dataStore.Set(msg.Key, msg.Value, msg.ExpireTimeMS)
-			_, err := conn.Write(commands.NewOkMessage().ToBytes())
-			if err != nil {
-				log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-				return
-			}
-		case *commands.GetMessage:
-			value, err := dataStore.Get(msg.Key)
-			if err != nil {
-				log.Printf("get error from %s: %v", conn.RemoteAddr(), err)
-				return
-			}
-
-			if value == nil {
-				_, err = conn.Write(commands.NewNullBulkStringMessage().ToBytes())
-				if err != nil {
-					log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-					return
-				}
-			} else {
-				_, err = conn.Write(commands.NewBulkStringMessage(value.Value).ToBytes())
-				if err != nil {
-					log.Printf("write error to %s: %v", conn.RemoteAddr(), err)
-					return
-				}
-			}
-		default:
-			log.Printf("unknown message type: %v", msg)
+		if err != nil {
+			log.Printf("parse error from %s: %v", conn.RemoteAddr(), err)
+			return
+		}
+		err = msg.Handle(conn, dataStore)
+		if err != nil {
+			log.Printf("handle error from %s: %v", conn.RemoteAddr(), err)
+			return
 		}
 	}
 }

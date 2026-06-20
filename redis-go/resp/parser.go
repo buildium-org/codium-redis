@@ -51,10 +51,6 @@ func (p *RESPParser) parseSimpleString(messageParts []string) ([]string, error) 
 func (p *RESPParser) parseArray(messageParts []string) ([]string, error) {
 	// "*2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n" -> ECHO hey
 	// "*5\r\n$3\r\nSET\r\n$4\r\nkey1\r\n$6\r\nvalue1\r\n$2\r\nPX\r\n:1000\r\n" -> SET key1 value1 PX 1000
-	if messageParts[0][0] != '*' {
-		return nil, fmt.Errorf("invalid array: %s", messageParts[0])
-	}
-
 	numElements, err := strconv.Atoi(messageParts[0][1:])
 	if err != nil {
 		return nil, fmt.Errorf("invalid array: %s", messageParts[0])
@@ -97,7 +93,6 @@ func (p *RESPParser) parseArray(messageParts []string) ([]string, error) {
 }
 
 func (p *RESPParser) parseBulkString(lengthPart string, valuePart string) (string, error) {
-	// $4\r\nECHO\r\n -> ECHO
 	if lengthPart[0] != '$' {
 		return "", fmt.Errorf("invalid bulk string: %s", lengthPart)
 	}

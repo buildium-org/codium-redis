@@ -1,6 +1,8 @@
 package commands
 
 import (
+	datastore "golang/dataStore"
+	"net"
 	"strconv"
 )
 
@@ -26,4 +28,13 @@ func NewSetMessage(tokens []string) *SetMessage {
 }
 func (m *SetMessage) ToBytes() []byte {
 	return []byte("$" + strconv.Itoa(len(m.Key)) + "\r\n" + m.Key + "\r\n" + "$" + strconv.Itoa(len(m.Value)) + "\r\n" + m.Value + "\r\n")
+}
+
+func (m *SetMessage) Handle(conn net.Conn, dataStore *datastore.DataStore) error {
+	dataStore.Set(m.Key, m.Value, m.ExpireTimeMS)
+	_, err := conn.Write(NewOkMessage().ToBytes())
+	if err != nil {
+		return err
+	}
+	return nil
 }
