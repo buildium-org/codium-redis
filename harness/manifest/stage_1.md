@@ -1,6 +1,6 @@
 # Bind to a TCP Port
 
-Start by creating a TCP server that listens on port 6379, the default Redis port. This is the foundation everything else is built on.
+Redis listens for connections on TCP port 6379 by default. Before any commands can be processed, your server needs to open that port and accept incoming connections. This stage is purely about getting the network layer in place — no protocol parsing yet.
 
 ## Requirements
 
@@ -9,4 +9,4 @@ Start by creating a TCP server that listens on port 6379, the default Redis port
 
 ## What will be tested
 
-- A TCP connection to `localhost:6379` succeeds
+- A TCP connection to `localhost:6379` succeeds without being refused or timing out
